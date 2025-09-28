@@ -1,19 +1,72 @@
 const express = require('express');
-
 const app = express();
 const port = 3000;
 
-app.get('/', (req, res) => {
-    res.send('Halo! Ini adalah halaman utama API saya.');
-});
+app.use(express.json());
+
+let produk = [
+    { id: 1, nama: "Laptop Gaming", harga: 15000000 },
+    { id: 2, nama: "Mouse Wireless", harga: 250000 },
+    { id: 3, nama: "Keyboard Mechanical", harga: 750000 }
+];
 
 app.get('/produk', (req, res) => {
-    res.json({
-        id: 1,
-        nama: "Produk 1",
-        harga: 50000
-    });
+    res.json(produk);
 });
+
+app.get('/produk/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const produkDitemukan = produk.find(p => p.id === id);
+
+    if (produkDitemukan) {
+        res.json(produkDitemukan);
+    } else {
+        res.status(404).json({ message: "Produk tidak ditemukan" });
+    }
+});
+
+
+app.post('/produk', (req, res) => {
+    const produkBaru = {
+        id: produk.length + 1,
+        nama: req.body.nama,
+        harga: req.body.harga
+    };
+
+    produk.push(produkBaru);
+    res.status(201).json(produkBaru);
+});
+
+
+app.put('/produk/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const indexProduk = produk.findIndex(p => p.id === id);
+
+    if (indexProduk !== -1) {
+        produk[indexProduk] = {
+            id: id,
+            nama: req.body.nama,
+            harga: req.body.harga
+        };
+        res.json(produk[indexProduk]);
+    } else {
+        res.status(404).json({ message: "Produk tidak ditemukan untuk diupdate" });
+    }
+});
+
+
+app.delete('/produk/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const indexProduk = produk.findIndex(p => p.id === id);
+
+    if (indexProduk !== -1) {
+        produk.splice(indexProduk, 1);
+        res.json({ message: "Produk berhasil dihapus" });
+    } else {
+        res.status(404).json({ message: "Produk tidak ditemukan untuk dihapus" });
+    }
+});
+
 
 app.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
