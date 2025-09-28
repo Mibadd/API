@@ -5,9 +5,10 @@ const port = 3000;
 app.use(express.json());
 
 let produk = [
-    { id: 1, nama: "Laptop Gaming", harga: 15000000 },
+    { id: 1, nama: "Monitor Ultrawide", harga: 4500000 },
     { id: 2, nama: "Mouse Wireless", harga: 250000 },
-    { id: 3, nama: "Keyboard Mechanical", harga: 750000 }
+    { id: 3, nama: "Keyboard Mechanical RGB", harga: 850000 },
+    { id: 4, nama: "Headset Gaming", harga: 600000 }
 ];
 
 app.get('/produk', (req, res) => {
