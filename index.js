@@ -28,10 +28,22 @@ app.get('/produk/:id', (req, res) => {
 
 
 app.post('/produk', (req, res) => {
+    const { nama, harga } = req.body;
+
+    if (!nama || harga === undefined) {
+        return res.status(400).json({ message: "Error: Nama dan harga wajib diisi!" });
+    }
+    if (typeof nama !== 'string' || nama.trim() === "") {
+        return res.status(400).json({ message: "Error: Nama harus berupa teks dan tidak boleh kosong!" });
+    }
+    if (typeof harga !== 'number' || harga < 0) {
+        return res.status(400).json({ message: "Error: Harga harus berupa angka positif!" });
+    }
+
     const produkBaru = {
-        id: produk.length + 1,
-        nama: req.body.nama,
-        harga: req.body.harga
+        id: produk.length > 0 ? Math.max(...produk.map(p => p.id)) + 1 : 1,
+        nama: nama,
+        harga: harga
     };
 
     produk.push(produkBaru);
@@ -41,18 +53,29 @@ app.post('/produk', (req, res) => {
 
 app.put('/produk/:id', (req, res) => {
     const id = parseInt(req.params.id);
+    const { nama, harga } = req.body;
     const indexProduk = produk.findIndex(p => p.id === id);
 
-    if (indexProduk !== -1) {
-        produk[indexProduk] = {
-            id: id,
-            nama: req.body.nama,
-            harga: req.body.harga
-        };
-        res.json(produk[indexProduk]);
-    } else {
-        res.status(404).json({ message: "Produk tidak ditemukan untuk diupdate" });
+    if (indexProduk === -1) {
+        return res.status(404).json({ message: "Produk tidak ditemukan untuk diupdate" });
     }
+
+    if (!nama || harga === undefined) {
+        return res.status(400).json({ message: "Error: Nama dan harga wajib diisi!" });
+    }
+    if (typeof nama !== 'string' || nama.trim() === "") {
+        return res.status(400).json({ message: "Error: Nama harus berupa teks dan tidak boleh kosong!" });
+    }
+    if (typeof harga !== 'number' || harga < 0) {
+        return res.status(400).json({ message: "Error: Harga harus berupa angka positif!" });
+    }
+
+    produk[indexProduk] = {
+        id: id,
+        nama: nama,
+        harga: harga
+    };
+    res.json(produk[indexProduk]);
 });
 
 
