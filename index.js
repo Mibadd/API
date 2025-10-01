@@ -1,97 +1,80 @@
+// index.js
 const express = require('express');
+require('dotenv').config();
+const mongoose = require('mongoose');
+const Produk = require('./produkModel');
+
 const app = express();
 const port = 3000;
 
 app.use(express.json());
 
-let produk = [
-    { id: 1, nama: "Monitor Ultrawide", harga: 4500000 },
-    { id: 2, nama: "Mouse Wireless", harga: 250000 },
-    { id: 3, nama: "Keyboard Mechanical RGB", harga: 850000 },
-    { id: 4, nama: "Headset Gaming", harga: 600000 }
-];
+// --- KONEKSI KE DATABASE ---
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log("Berhasil terhubung ke MongoDB!");
+        app.listen(port, () => {
+            console.log(`Server berjalan di http://localhost:${port}`);
+        });
+    })
+    .catch((error) => {
+        console.log("Koneksi ke MongoDB gagal:", error.message);
+    });
+-
 
-app.get('/produk', (req, res) => {
-    res.json(produk);
-});
+    app.get('/produk', async (req, res) => {
+        try {
+            const semuaProduk = await Produk.find({});
+            res.status(200).json(semuaProduk);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    });
 
-app.get('/produk/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const produkDitemukan = produk.find(p => p.id === id);
-
-    if (produkDitemukan) {
-        res.json(produkDitemukan);
-    } else {
-        res.status(404).json({ message: "Produk tidak ditemukan" });
+app.get('/produk/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const produk = await Produk.findById(id);
+        if (!produk) {
+            return res.status(404).json({ message: "Produk tidak ditemukan" });
+        }
+        res.status(200).json(produk);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 
-
-app.post('/produk', (req, res) => {
-    const { nama, harga } = req.body;
-
-    if (!nama || harga === undefined) {
-        return res.status(400).json({ message: "Error: Nama dan harga wajib diisi!" });
-    }
-    if (typeof nama !== 'string' || nama.trim() === "") {
-        return res.status(400).json({ message: "Error: Nama harus berupa teks dan tidak boleh kosong!" });
-    }
-    if (typeof harga !== 'number' || harga < 0) {
-        return res.status(400).json({ message: "Error: Harga harus berupa angka positif!" });
-    }
-
-    const produkBaru = {
-        id: produk.length > 0 ? Math.max(...produk.map(p => p.id)) + 1 : 1,
-        nama: nama,
-        harga: harga
-    };
-
-    produk.push(produkBaru);
-    res.status(201).json(produkBaru);
-});
-
-
-app.put('/produk/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const { nama, harga } = req.body;
-    const indexProduk = produk.findIndex(p => p.id === id);
-
-    if (indexProduk === -1) {
-        return res.status(404).json({ message: "Produk tidak ditemukan untuk diupdate" });
-    }
-
-    if (!nama || harga === undefined) {
-        return res.status(400).json({ message: "Error: Nama dan harga wajib diisi!" });
-    }
-    if (typeof nama !== 'string' || nama.trim() === "") {
-        return res.status(400).json({ message: "Error: Nama harus berupa teks dan tidak boleh kosong!" });
-    }
-    if (typeof harga !== 'number' || harga < 0) {
-        return res.status(400).json({ message: "Error: Harga harus berupa angka positif!" });
-    }
-
-    produk[indexProduk] = {
-        id: id,
-        nama: nama,
-        harga: harga
-    };
-    res.json(produk[indexProduk]);
-});
-
-
-app.delete('/produk/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const indexProduk = produk.findIndex(p => p.id === id);
-
-    if (indexProduk !== -1) {
-        produk.splice(indexProduk, 1);
-        res.json({ message: "Produk berhasil dihapus" });
-    } else {
-        res.status(404).json({ message: "Produk tidak ditemukan untuk dihapus" });
+app.post('/produk', async (req, res) => {
+    try {
+        const produkBaru = await Produk.create(req.body);
+        res.status(201).json(produkBaru);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
 });
 
+app.put('/produk/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const produkDiupdate = await Produk.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+        if (!produkDiupdate) {
+            return res.status(404).json({ message: "Produk tidak ditemukan untuk diupdate" });
+        }
+        res.status(200).json(produkDiupdate);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
 
-app.listen(port, () => {
-    console.log(`Server berjalan di http://localhost:${port}`);
+app.delete('/produk/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const produkDihapus = await Produk.findByIdAndDelete(id);
+        if (!produkDihapus) {
+            return res.status(404).json({ message: "Produk tidak ditemukan untuk dihapus" });
+        }
+        res.status(200).json({ message: "Produk berhasil dihapus", data: produkDihapus });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
